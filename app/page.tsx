@@ -1286,7 +1286,7 @@ function StandaloneReceipts({ profile, notify }: { profile: Profile; notify: (s:
   const [form, setForm] = useState({ received_from: "", receipt_date: new Date().toISOString().slice(0,10), currency: "MYR", amount: "", payment_method: "Bank Transfer", reference_no: "", tour_code: "", description: "Travel payment", notes: "" });
   async function loadReceipts() {
     setLoading(true);
-    const { data, error } = await supabase.from("standalone_receipts").select("*").order("created_at",{ascending:false});
+    const { data, error } = await supabase.from("standalone_receipts").select("*").eq("created_by",profile.id).order("created_at",{ascending:false});
     if (error) notify(error.message); else setReceipts(data || []);
     setLoading(false);
   }
