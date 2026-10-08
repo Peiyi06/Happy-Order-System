@@ -1352,7 +1352,7 @@ function StandaloneReceipts({ profile, notify }: { profile: Profile; notify: (s:
         <label className="wide">Description *<textarea value={form.description} onChange={e=>update("description",e.target.value)}/></label>
         <label className="wide">Remarks<textarea value={form.notes} onChange={e=>update("notes",e.target.value)}/></label>
         <div className="wide"><button className="primary" disabled={saving} type="submit">{saving?"Saving…":editingId?"Save Changes":"Create Receipt"}</button></div>
-      </form></section>
+      </form>
     </section>
     <section className="panel" style={{marginTop:24}}>
       <div className="panel-head"><span><h2>Receipt Management</h2><small>Search, filter, view and edit saved receipts</small></span><b>{filtered.length} Receipts</b></div>
