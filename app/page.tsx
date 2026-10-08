@@ -1262,6 +1262,26 @@ function StandaloneReceipts({ profile, notify }: { profile: Profile; notify: (s:
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [month, setMonth] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const emptyForm = () => ({ received_from: "", receipt_date: new Date().toISOString().slice(0,10), currency: "MYR", amount: "", payment_method: "Bank Transfer", reference_no: "", tour_code: "", description: "Travel payment", notes: "" });
+  function startEdit(r: any) {
+    setSelected(null); setEditingId(r.id);
+    setForm({ received_from:r.received_from || "", receipt_date:r.receipt_date || "", currency:r.currency || "MYR", amount:String(r.amount), payment_method:r.payment_method || "", reference_no:r.reference_no || "", tour_code:r.tour_code || "", description:r.description || "", notes:r.notes || "" });
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function cancelEdit() { setEditingId(null); setForm(emptyForm()); }
+  const filtered = receipts.filter(r => {
+    const term = search.trim().toLowerCase();
+    return (!month || String(r.receipt_date).startsWith(month)) &&
+      (!term || [r.receipt_number,r.received_from,r.tour_code,r.reference_no,r.description].some(v=>String(v||"").toLowerCase().includes(term)));
+  });
+  const pages = Math.max(1,Math.ceil(filtered.length/pageSize));
+  const currentPage = Math.min(page,pages);
+  const visible = filtered.slice((currentPage-1)*pageSize,currentPage*pageSize);
   const receiptRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState({ received_from: "", receipt_date: new Date().toISOString().slice(0,10), currency: "MYR", amount: "", payment_method: "Bank Transfer", reference_no: "", tour_code: "", description: "Travel payment", notes: "" });
   async function loadReceipts() {
@@ -1276,16 +1296,19 @@ function StandaloneReceipts({ profile, notify }: { profile: Profile; notify: (s:
     e.preventDefault();
     if (!form.received_from.trim() || !form.description.trim() || Number(form.amount)<=0) { notify("Please complete Received From, Description and Amount"); return; }
     setSaving(true);
-    const { data, error } = await supabase.from("standalone_receipts").insert({
+    const payload = {
       received_from: form.received_from.trim(), receipt_date: form.receipt_date, currency: form.currency, amount: Number(form.amount),
       payment_method: form.payment_method.trim() || null, reference_no: form.reference_no.trim() || null, tour_code: form.tour_code.trim() || null,
-      description: form.description.trim(), notes: form.notes.trim() || null, created_by: profile.id
-    }).select().single();
+      description: form.description.trim(), notes: form.notes.trim() || null
+    };
+    const { data, error } = editingId
+      ? await supabase.from("standalone_receipts").update(payload).eq("id",editingId).select().single()
+      : await supabase.from("standalone_receipts").insert({...payload,created_by:profile.id}).select().single();
     setSaving(false);
     if (error) { notify(error.message); return; }
-    notify(`Receipt ${data.receipt_number} created`);
+    notify(`Receipt ${data.receipt_number} ${editingId ? "updated" : "created"}`);
     setForm(old=>({...old,received_from:"",amount:"",reference_no:"",tour_code:"",description:"Travel payment",notes:""}));
-    setSelected(data); loadReceipts();
+    setEditingId(null); setSelected(data); loadReceipts();
   }
   const money=(r:any)=>`${r.currency} ${Number(r.amount||0).toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   async function downloadStandaloneReceipt() {
@@ -1313,11 +1336,11 @@ function StandaloneReceipts({ profile, notify }: { profile: Profile; notify: (s:
     <section className="receipt-travel-details"><h3>PAYMENT DETAILS</h3><div><span><small>Description</small><b>{selected.description}</b></span><span><small>Payment Method</small><b>{selected.payment_method || "—"}</b></span></div></section>
     <div className="receipt-payment-summary"><span><small>Reference No.</small><b>{selected.reference_no || "—"}</b></span><span><small>Amount Paid</small><b>{money(selected)}</b></span></div>
     {selected.notes && <p><b>Remarks:</b> {selected.notes}</p>}<p>Payment received with thanks.</p><div className="receipt-sign">Prepared by Happy Express Travel Sdn Bhd</div>
-    <div className="modal-actions pdf-ignore"><button className="secondary" onClick={()=>setSelected(null)}>Back</button><button className="primary" disabled={pdfBusy} onClick={downloadStandaloneReceipt}>{pdfBusy?"Generating PDF…":"Download Receipt PDF"}</button></div>
+    <div className="modal-actions pdf-ignore"><button className="secondary" onClick={()=>setSelected(null)}>Back</button><button className="secondary" onClick={()=>startEdit(selected)}>Edit Receipt</button><button className="primary" disabled={pdfBusy} onClick={downloadStandaloneReceipt}>{pdfBusy?"Generating PDF…":"Download Receipt PDF"}</button></div>
   </div></div>;
   return <>
     <Head eyebrow="DIRECT RECEIPT" title="Receipt" sub="无需先开 PI 或 Invoice，可直接开收据。" />
-    <div className="form-layout"><section className="panel"><div className="panel-head"><span><h2>New Receipt</h2><small>Direct receipt entry</small></span></div>
+    <section className="panel"><div className="panel-head"><span><h2>{editingId ? "Edit Receipt" : "New Receipt"}</h2><small>{editingId ? "Edit saved receipt · receipt number stays unchanged" : "Direct receipt entry"}</small></span>{editingId && <button type="button" className="secondary" onClick={cancelEdit}>Cancel Edit</button>}</div>
       <form onSubmit={createReceipt} className="fields" style={{padding:22}}>
         <label>Received From *<input value={form.received_from} onChange={e=>update("received_from",e.target.value)} placeholder="Customer / Company name"/></label>
         <label>Receipt Date *<input type="date" value={form.receipt_date} onChange={e=>update("receipt_date",e.target.value)}/></label>
@@ -1328,11 +1351,42 @@ function StandaloneReceipts({ profile, notify }: { profile: Profile; notify: (s:
         <label>Tour Code (Optional)<input value={form.tour_code} onChange={e=>update("tour_code",e.target.value)} placeholder="Can be left blank"/></label>
         <label className="wide">Description *<textarea value={form.description} onChange={e=>update("description",e.target.value)}/></label>
         <label className="wide">Remarks<textarea value={form.notes} onChange={e=>update("notes",e.target.value)}/></label>
-        <div className="wide"><button className="primary" disabled={saving} type="submit">{saving?"Creating…":"Create Receipt"}</button></div>
+        <div className="wide"><button className="primary" disabled={saving} type="submit">{saving?"Saving…":editingId?"Save Changes":"Create Receipt"}</button></div>
       </form></section>
-      <section className="panel"><div className="panel-head"><span><h2>Receipt History</h2><small>Latest direct receipts</small></span><b>{receipts.length}</b></div>
-        <div className="receipt-list" style={{padding:22}}>{loading?<p>Loading…</p>:receipts.length?receipts.map(r=><article key={r.id}><span><small>{r.receipt_date} · {r.tour_code || "Direct Receipt"}</small><b>{r.receipt_number} · {r.received_from}</b><small>{money(r)}</small></span><button className="row-action" onClick={()=>setSelected(r)}>View / PDF</button></article>):<p>No direct receipt yet.</p>}</div>
-      </section></div>
+    </section>
+    <section className="panel" style={{marginTop:24}}>
+      <div className="panel-head"><span><h2>Receipt Management</h2><small>Search, filter, view and edit saved receipts</small></span><b>{filtered.length} Receipts</b></div>
+      <div style={{padding:22}}>
+        <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:20}}>
+          <input aria-label="Search receipts" placeholder="Search Receipt No., Customer, Tour Code, Reference..." value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} style={{flex:"1 1 320px",padding:12,border:"1px solid #d7e0e6",borderRadius:9}}/>
+          <input aria-label="Filter month" type="month" value={month} onChange={e=>{setMonth(e.target.value);setPage(1);}} style={{padding:12,border:"1px solid #d7e0e6",borderRadius:9}}/>
+          <button type="button" className="secondary" onClick={()=>{setSearch("");setMonth("");setPage(1);}}>Clear</button>
+        </div>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",minWidth:700,textAlign:"left"}}>
+            <thead><tr style={{borderBottom:"2px solid #dce4e9"}}>
+              {["Receipt No.","Date","Received From","Tour Code","Amount","Actions"].map(h=><th key={h} style={{padding:"12px 10px",whiteSpace:"nowrap"}}>{h}</th>)}
+            </tr></thead>
+            <tbody>{loading?<tr><td colSpan={6} style={{padding:18}}>Loading…</td></tr>:visible.length?visible.map(r=><tr key={r.id} style={{borderBottom:"1px solid #e5ebef"}}>
+              <td style={{padding:"14px 10px",fontWeight:700,whiteSpace:"nowrap"}}>{r.receipt_number}</td>
+              <td style={{padding:"14px 10px",whiteSpace:"nowrap"}}>{r.receipt_date}</td>
+              <td style={{padding:"14px 10px"}}>{r.received_from}</td>
+              <td style={{padding:"14px 10px"}}>{r.tour_code || "—"}</td>
+              <td style={{padding:"14px 10px",whiteSpace:"nowrap"}}>{money(r)}</td>
+              <td style={{padding:"14px 10px",whiteSpace:"nowrap"}}><button type="button" className="row-action" onClick={()=>setSelected(r)}>View / PDF</button>{" "}<button type="button" className="row-action" onClick={()=>startEdit(r)}>Edit</button></td>
+            </tr>):<tr><td colSpan={6} style={{padding:18}}>No matching receipts.</td></tr>}</tbody>
+          </table>
+        </div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginTop:18}}>
+          <small>Showing {filtered.length?((currentPage-1)*pageSize+1):0}–{Math.min(currentPage*pageSize,filtered.length)} of {filtered.length}</small>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <button type="button" className="secondary" disabled={currentPage===1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Previous</button>
+            <span>Page {currentPage} / {pages}</span>
+            <button type="button" className="secondary" disabled={currentPage===pages} onClick={()=>setPage(p=>Math.min(pages,p+1))}>Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
   </>;
 }
 
