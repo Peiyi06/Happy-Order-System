@@ -71,6 +71,7 @@ type View =
   | "staff"
   | "pi-settings"
   | "customer-base"
+  | "receipt"
   | "security";
 type PiOption = {
   id: string;
@@ -790,6 +791,7 @@ function System({ profile }: { profile: Profile }) {
     sales: [
       ["dashboard", "▦", "我的 Dashboard"],
       ["orders", "◫", "我的 PI／订单"],
+      ["receipt", "▧", "Receipt"],
       ["notifications", "♧", "通知"],
       ["commission", "↗", "我的业绩"],
       ["security", "⌾", "密码设置"],
@@ -798,6 +800,7 @@ function System({ profile }: { profile: Profile }) {
       ["dashboard", "▦", "Account Dashboard"],
       ["notifications", "♧", "新成单通知"],
       ["account", "✓", "正式开票"],
+      ["receipt", "▧", "Receipt"],
       ["orders", "◫", "订单查询"],
       ["security", "⌾", "密码设置"],
     ],
@@ -805,6 +808,7 @@ function System({ profile }: { profile: Profile }) {
       ["dashboard", "▦", "管理层 Dashboard"],
       ["my-orders", "◫", "我的 Booking"],
       ["orders", "▤", "全部订单"],
+      ["receipt", "▧", "Receipt"],
       ["notifications", "♧", "通知中心"],
       ["costing", "◒", "Costing"],
       ["commission", "%", "Commission"],
@@ -826,7 +830,7 @@ function System({ profile }: { profile: Profile }) {
   const mobileMenu: Record<Role, [View, string, string][]> = {
     sales: [["dashboard", "⌂", "首页"], ["orders", "▤", "订单"], ["new", "＋", "开PI"], ["notifications", "♧", "通知"]],
     account: [["dashboard", "⌂", "首页"], ["notifications", "♧", "通知"], ["account", "✓", "开票"], ["orders", "▤", "查询"]],
-    manager: [["dashboard", "⌂", "首页"], ["my-orders", "◫", "我的"], ["orders", "▤", "全部"], ["new", "＋", "开PI"]],
+    manager: [["dashboard", "⌂", "首页"], ["my-orders", "◫", "我的"], ["orders", "▤", "全部"], ["new", "＋", "开PI"], ["receipt", "▧", "Receipt"]],
   };
   return (
     <div className="shell">
@@ -941,6 +945,7 @@ function System({ profile }: { profile: Profile }) {
               {view === "staff" && <Staff profile={profile} notify={notify} />}
               {view === "pi-settings" && <PiSettings notify={notify} />}
               {view === "customer-base" && <CustomerBase orders={orders} />}
+              {view === "receipt" && <StandaloneReceipts profile={profile} notify={notify} />}
               {view === "security" && <SecuritySettings profile={profile} />}
             </>
           )}
