@@ -3721,8 +3721,7 @@ select {
 
 /* Mobile navigation: use the existing hamburger/sidebar instead of crowded horizontal tabs. */
 @media (max-width:780px) {
-  .mobile-tabs { display:none !important; }
-  .mobile-menu-button { display:inline-flex !important; align-items:center; justify-content:center; flex:0 0 auto; min-width:44px; min-height:44px; }
+  .mobile-tabs { display:flex; }
   .top { display:flex; align-items:center; gap:10px; }
   .top > b { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .manager-calendar-panel { max-width:100%; min-width:0; }
