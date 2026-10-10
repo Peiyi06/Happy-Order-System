@@ -3588,3 +3588,133 @@ select {
     width: 100%;
   }
 }
+
+/* Mobile viewport guard — keep the application inside the physical phone width. */
+@media (max-width: 780px) {
+  html,
+  body,
+  .shell {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .shell {
+    position: relative;
+  }
+
+  main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .top {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .content {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 18px 14px calc(96px + env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden;
+  }
+
+  .content > *,
+  .page-head,
+  .page-head > div,
+  .manager-month-kpis,
+  .manager-month-kpis .kpi,
+  .dashboard-notifications,
+  .manager-calendar-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .page-head {
+    display: flex;
+    align-items: stretch !important;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .page-head h1,
+  .page-head p {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .page-head > button {
+    width: 100%;
+  }
+
+  .manager-month-kpis,
+  .kpis,
+  .kpis.three {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .manager-month-kpis .kpi,
+  .kpi {
+    min-height: 0;
+    padding: 18px;
+  }
+
+  .manager-month-kpis .kpi > b,
+  .kpi > b {
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-notifications {
+    overflow: hidden;
+  }
+
+  .dashboard-notifications .panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+  }
+
+  .dashboard-notifications .panel-head button {
+    width: 100%;
+  }
+
+  .manager-calendar-panel {
+    overflow: hidden !important;
+  }
+
+  .manager-calendar-head {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 18px;
+  }
+
+  .manager-calendar-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto !important;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .manager-calendar {
+    min-width: 945px !important;
+  }
+
+  .mobile-tabs {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
